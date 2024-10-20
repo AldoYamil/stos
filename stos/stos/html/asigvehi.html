@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Asignar Vehículo a Empleado</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('#warehouse_code').change(function() {
+                var warehouseCode = $(this).val();
+                
+                // Hacer una petición AJAX para obtener empleados y vehículos del almacén seleccionado
+                $.ajax({
+                    url: 'get_employees_vehicles.php', // Archivo PHP que procesará la petición
+                    type: 'POST',
+                    data: { warehouse_code: warehouseCode },
+                    success: function(data) {
+                        var result = JSON.parse(data);
+                        
+                        // Limpiar opciones actuales
+                        $('#employee_num').empty();
+                        $('#vehicle_num').empty();
+                        
+                        // Agregar nuevos empleados
+                        if (result.employees.length > 0) {
+                            $('#employee_num').append("<option value=''>Selecciona un empleado</option>"); // Opción por defecto
+                            $.each(result.employees, function(index, employee) {
+                                $('#employee_num').append("<option value='" + employee.num + "'>" + employee.name + " " + employee.lastname + "</option>");
+                            });
+                        } else {
+                            $('#employee_num').append("<option value=''>No hay transportistas disponibles</option>");
+                        }
+
+                        // Agregar nuevos vehículos
+                        if (result.vehicles.length > 0) {
+                            $('#vehicle_num').append("<option value=''>Selecciona un vehículo</option>"); // Opción por defecto
+                            $.each(result.vehicles, function(index, vehicle) {
+                                $('#vehicle_num').append("<option value='" + vehicle.number + "'>" + vehicle.license_plate + " - " + vehicle.model + "</option>");
+                            });
+                        } else {
+                            $('#vehicle_num').append("<option value=''>No hay vehículos disponibles</option>");
+                        }
+                    }
+                });
+            });
+        });
+    </script>
+</head>
+<body>
+    <h2>Asignar Vehículo a Empleado de Reparto</h2>
+    <form action="assign_vehicle_process.php" method="POST">
+        <label for="warehouse_code">Selecciona el Almacén:</label>
+        <select id="warehouse_code" name="warehouse_code" required>
+            <?php
+            include 'conecxion.php';
+
+            // Obtener todos los almacenes
+            $sql = "SELECT code, name FROM Warehouse";
+            $result = $conn->query($sql);
+
+            if ($result->num_rows > 0) {
+                while ($row = $result->fetch_assoc()) {
+                    echo "<option value='" . $row['code'] . "'>" . $row['name'] . "</option>";
+                }
+            } else {
+                echo "<option value=''>No hay almacenes disponibles</option>";
+            }
+
+            // No cerrar la conexión aquí para usarla en otras consultas
+            ?>
+        </select>
+        <br><br>
+
+        <label for="employee_num">Selecciona el Empleado (Transportista):</label>
+        <select id="employee_num" name="employee_num" required>
+            <option value=''>Por favor selecciona un empleado</option>
+        </select>
+        <br><br>
+
+        <label for="vehicle_num">Selecciona el Vehículo:</label>
+        <select id="vehicle_num" name="vehicle_num" required>
+            <option value=''>Por favor selecciona un vehículo</option>
+        </select>
+        <br><br>
+
+        <input type="submit" value="Asignar Vehículo">
+    </form>
+</body>
+</html>
+
